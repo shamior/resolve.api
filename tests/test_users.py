@@ -1,6 +1,7 @@
 from sqlmodel import Session, select
 
-from app.models.user_model import User, UserRoles
+from app.domain.entities.user_entity import UserRoles
+from app.infra.database.models import User
 
 
 def test_user_create(db: Session):

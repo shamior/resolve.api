@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 
-from app.routers.auth_router import auth_router
-from app.routers.service_router import service_router
-from app.routers.users_router import user_router
+from app.api.auth.auth_controller import auth_router
+from app.api.service.service_controller import service_router
+from app.api.user.users_controller import user_router
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
