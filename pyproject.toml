@@ -37,12 +37,18 @@ addopts = "-p no:warnings"
 
 [tool.taskipy.tasks]
 lint = "ruff check"
+
 pre_format = "ruff check --fix"
 format = "ruff format"
+
 run = "fastapi dev app/main.py"
+
 pre_test = "task lint"
 test = "pytest -s -x --cov=app -vv"
 post_test = "coverage html"
+
+pre_ptest = "task pre_test"
+ptest = "pytest -s -x -vv"
 
 
 [build-system]
