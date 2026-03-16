@@ -6,10 +6,9 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jwt import DecodeError, ExpiredSignatureError, decode, encode
 from pwdlib import PasswordHash
-from sqlmodel import col, select
 
 from app.domain.config.env_config.settings import settings
-from app.infra.database.database import Database
+from app.domain.repositories.user_repository import UserRepository
 from app.infra.database.models import User
 
 hasher = PasswordHash.recommended()
@@ -35,16 +34,28 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+def create_refresh_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(
+        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+    )
+    to_encode.update({"exp": expire})
+    encoded_jwt = encode(
+        to_encode, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+    )
+    return encoded_jwt
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 
 def get_current_user(
-    db: Database,
+    user_repository: UserRepository,
     token: str = Depends(oauth2_scheme),
 ):
     credentials_exception = HTTPException(
         status_code=HTTPStatus.UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="Credenciais inválidas",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
@@ -63,11 +74,7 @@ def get_current_user(
     except ExpiredSignatureError:
         raise credentials_exception
 
-    user = db.exec(
-        select(User)
-        .where(User.email == subject_email)
-        .where(col(User.activated_at).is_not(None))
-    ).one_or_none()
+    user = user_repository.find_by_email(email=subject_email)
 
     if not user:
         raise credentials_exception

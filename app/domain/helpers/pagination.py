@@ -1,22 +1,31 @@
+from math import ceil
 from typing import Annotated, Generic, Sequence, TypeVar
 
 from fastapi import Depends, Query
 from pydantic import BaseModel
-from sqlmodel import Field
 
 T = TypeVar("T")
 
 
 class Pagination(BaseModel, Generic[T]):
-    data: Sequence[T] = Field()
-    page: int = Field()
-    per_page: int = Field()
-    total: int = Field()
+    data: Sequence[T]
+    page: int
+    per_page: int
+    total: int
+    total_pages: int
 
 
-class QueryParams(BaseModel):
+class PaginationQueryParams(BaseModel):
     page: int = Query(1, gt=0)
-    per_page: int = Query(10, gt=0)
+    per_page: int = Query(15, gt=0)
 
 
-PaginationParams = Annotated[QueryParams, Depends()]
+def get_offset(pagination: PaginationQueryParams):
+    return (pagination.page - 1) * pagination.per_page
+
+
+def get_total_pages(total: int, per_page: int):
+    return ceil(total / per_page)
+
+
+PaginationParams = Annotated[PaginationQueryParams, Depends()]

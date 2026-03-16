@@ -181,3 +181,4 @@ pyrightconfig.json
 
 database.db
 .zed/
+.vscode/

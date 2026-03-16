@@ -18,4 +18,4 @@ class UserEntity(SQLModel):
     role: UserRoles = Field()
     name: str = Field()
     activated_at: Optional[datetime] = Field(default=None)
-    password: str = Field()
+    password: str = Field(default="")

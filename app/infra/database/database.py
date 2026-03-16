@@ -10,7 +10,7 @@ engine = create_engine(
 )
 
 
-def get_session():
+def get_session():  # pragma: no cover
     with Session(engine) as session:
         yield session
 
