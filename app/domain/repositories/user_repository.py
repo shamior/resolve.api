@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import Depends
 from pydantic import UUID4, BaseModel, Field
-from sqlmodel import col, or_, select
+from sqlmodel import col, func, or_, select
 
 from app.domain.entities.user_role_entity import RoleType
 from app.domain.repositories.user_role_repository import UserRoleRepository
@@ -43,7 +43,7 @@ class UserRepository:
     def find_many(
         self,
         filters: UserRepositoryFindManyFilters,
-    ) -> Sequence[User]:
+    ) -> tuple[Sequence[User], int]:
         query = self.__get_select_clause(
             filters.fetch_only_not_deleted,
             filters.fetch_only_active,
@@ -61,11 +61,15 @@ class UserRepository:
                     col(UserRole.role_type).in_(filters.roles_in),
                 ),
             )
+        count_query = select(func.count()).select_from(query.subquery())
         if filters.offset:
             query = query.offset(filters.offset)
         if filters.limit:
             query = query.limit(filters.limit)
-        return self.db.exec(query).all()
+        with self.db.begin_nested():
+            users = self.db.exec(query).all()
+            count = self.db.exec(count_query).one()
+        return users, count
 
     def find_by_email(
         self,

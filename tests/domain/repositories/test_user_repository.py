@@ -23,10 +23,11 @@ def test_user_repository_find_many_should_return_many_users(
 ):
     batch_size = 20
     UserFactory(db, batch_size=batch_size)
-    users_db = user_repository.find_many(
+    users_db, total = user_repository.find_many(
         UserRepositoryFindManyFilters(fetch_only_active=False),
     )
     assert len(users_db) == batch_size
+    assert total == batch_size
 
 
 role_parameters = [
