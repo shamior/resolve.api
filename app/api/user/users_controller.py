@@ -1,7 +1,6 @@
-from datetime import datetime
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import UUID4
 
 from app.api.user.dto.user_activate_dto import UserActivate
@@ -14,20 +13,22 @@ from app.api.user.presentable.user_activation_presentable import (
     UserActivationPresentable,
 )
 from app.api.user.presentable.user_presentable import UserPresentable
-from app.domain.entities.user_role_entity import RoleType
 from app.domain.helpers.pagination import (
     Pagination,
     PaginationParams,
-    get_offset,
-    get_total_pages,
 )
 from app.domain.helpers.permission import Actions, PermissionChecker, Subjects
-from app.domain.helpers.security import get_password_hash
-from app.domain.repositories.user_repository import (
-    UserRepositoryDep,
-    UserRepositoryFindManyFilters,
+from app.domain.usecases.user.activate_user_usecase import (
+    ActivateUserUseCaseDep,
 )
-from app.infra.database.models import User
+from app.domain.usecases.user.create_user_usecase import CreateUserUseCaseDep
+from app.domain.usecases.user.read_comercials_usecase import (
+    ReadComercialsUseCaseDep,
+)
+from app.domain.usecases.user.read_user_activation_usecase import (
+    ReadUserActivationUseCaseDep,
+)
+from app.domain.usecases.user.read_users_usecase import ReadUsersUseCaseDep
 
 user_router = APIRouter(prefix="/users", tags=["users"])
 
@@ -43,34 +44,11 @@ user_router = APIRouter(prefix="/users", tags=["users"])
 )
 async def read_users(
     pagination: PaginationParams,
-    user_repository: UserRepositoryDep,
+    read_users_usecase: ReadUsersUseCaseDep,
     filters: ReadUsersQueryParams,
     roles_in: RolesIn = [],
 ):
-    offset = get_offset(pagination)
-    users = user_repository.find_many(
-        UserRepositoryFindManyFilters(
-            name_or_email_contains=filters.name_or_email_contains,
-            roles_in=roles_in,
-            offset=offset,
-            limit=pagination.per_page,
-        ),
-    )
-    total = len(
-        user_repository.find_many(
-            UserRepositoryFindManyFilters(
-                name_or_email_contains=filters.name_or_email_contains,
-                roles_in=roles_in,
-            ),
-        ),
-    )
-    return Pagination(
-        page=pagination.page,
-        per_page=pagination.per_page,
-        data=users,
-        total=total,
-        total_pages=get_total_pages(total=total, per_page=pagination.per_page),
-    )
+    return read_users_usecase.execute(pagination, filters, roles_in)
 
 
 @user_router.post(
@@ -85,20 +63,9 @@ async def read_users(
 )
 async def create_user(
     user: UserCreate,
-    user_repository: UserRepositoryDep,
+    create_user_usecase: CreateUserUseCaseDep,
 ):
-    user_validated = User.model_validate(user)
-    user_validated.password = get_password_hash(user_validated.password)
-    user_found = user_repository.find_by_email(user_validated.email)
-    if user_found:
-        raise HTTPException(
-            HTTPStatus.CONFLICT,
-            f"O email {user.email} já existe",
-        )
-    user_created = user_repository.create_user_with_roles(
-        user_validated,
-        user.roles_to_assign,
-    )
+    user_created = create_user_usecase.execute(user)
     return user_created
 
 
@@ -106,25 +73,10 @@ async def create_user(
 async def activate_user(
     user_id: UUID4,
     user_data: UserActivate,
-    user_repository: UserRepositoryDep,
+    activate_user_usecase: ActivateUserUseCaseDep,
 ):
-    user = user_repository.find_by_id(user_id)
-    if not user:
-        raise HTTPException(
-            HTTPStatus.NOT_FOUND,
-            detail="Código do usuário não encontrado",
-        )
-
-    if user.activated_at is not None:
-        raise HTTPException(
-            HTTPStatus.FORBIDDEN,
-            detail="O usuário já está ativado",
-        )
-
-    user.password = get_password_hash(user_data.password)
-    user.activated_at = datetime.now()
-    user_repository.update(user)
-    return user
+    user_activated = activate_user_usecase.execute(user_id, user_data)
+    return user_activated
 
 
 @user_router.get(
@@ -133,14 +85,9 @@ async def activate_user(
 )
 async def read_user_activation(
     user_id: UUID4,
-    user_repository: UserRepositoryDep,
+    read_user_activation_usecase: ReadUserActivationUseCaseDep,
 ):
-    user = user_repository.find_by_id(user_id)
-    if not user:
-        raise HTTPException(
-            HTTPStatus.NOT_FOUND,
-            detail="Código do usuário não encontrado",
-        )
+    user = read_user_activation_usecase.execute(user_id)
     return user
 
 
@@ -157,30 +104,9 @@ async def read_user_activation(
     ],
 )
 async def read_comercials(
-    user_repository: UserRepositoryDep,
+    read_comercials_usecase: ReadComercialsUseCaseDep,
     filters: ReadUsersQueryParams,
     pagination: PaginationParams,
 ):
-    users = user_repository.find_many(
-        UserRepositoryFindManyFilters(
-            name_or_email_contains=filters.name_or_email_contains,
-            roles_in=[RoleType.COMERCIAL],
-            offset=get_offset(pagination),
-        ),
-    )
-    total = len(
-        user_repository.find_many(
-            UserRepositoryFindManyFilters(
-                name_or_email_contains=filters.name_or_email_contains,
-                roles_in=[RoleType.COMERCIAL],
-                offset=get_offset(pagination),
-            ),
-        ),
-    )
-    return Pagination(
-        data=users,
-        page=pagination.page,
-        per_page=pagination.per_page,
-        total=total,
-        total_pages=get_total_pages(total=total, per_page=pagination.per_page),
-    )
+    comercials = read_comercials_usecase.execute(pagination, filters)
+    return comercials
