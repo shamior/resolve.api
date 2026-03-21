@@ -14,7 +14,7 @@ from app.api.user.presentable.user_activation_presentable import (
     UserActivationPresentable,
 )
 from app.api.user.presentable.user_presentable import UserPresentable
-from app.domain.entities.user_entity import UserRoles
+from app.domain.entities.user_role_entity import RoleType
 from app.domain.helpers.pagination import (
     Pagination,
     PaginationParams,
@@ -24,7 +24,7 @@ from app.domain.helpers.pagination import (
 from app.domain.helpers.permission import Actions, PermissionChecker, Subjects
 from app.domain.helpers.security import get_password_hash
 from app.domain.repositories.user_repository import (
-    UserRepository,
+    UserRepositoryDep,
     UserRepositoryFindManyFilters,
 )
 from app.infra.database.models import User
@@ -36,12 +36,14 @@ user_router = APIRouter(prefix="/users", tags=["users"])
     "/",
     response_model=Pagination[UserPresentable],
     dependencies=[
-        Depends(PermissionChecker(subject=Subjects.USERS, action=Actions.READ))
+        Depends(
+            PermissionChecker(subject=Subjects.USERS, action=Actions.READ),
+        ),
     ],
 )
 async def read_users(
     pagination: PaginationParams,
-    user_repository: UserRepository,
+    user_repository: UserRepositoryDep,
     filters: ReadUsersQueryParams,
     roles_in: RolesIn = [],
 ):
@@ -52,15 +54,15 @@ async def read_users(
             roles_in=roles_in,
             offset=offset,
             limit=pagination.per_page,
-        )
+        ),
     )
     total = len(
         user_repository.find_many(
             UserRepositoryFindManyFilters(
                 name_or_email_contains=filters.name_or_email_contains,
                 roles_in=roles_in,
-            )
-        )
+            ),
+        ),
     )
     return Pagination(
         page=pagination.page,
@@ -77,35 +79,46 @@ async def read_users(
     status_code=HTTPStatus.CREATED,
     dependencies=[
         Depends(
-            PermissionChecker(subject=Subjects.USERS, action=Actions.CREATE)
-        )
+            PermissionChecker(subject=Subjects.USERS, action=Actions.CREATE),
+        ),
     ],
 )
-async def create_user(user: UserCreate, user_repository: UserRepository):
+async def create_user(
+    user: UserCreate,
+    user_repository: UserRepositoryDep,
+):
     user_validated = User.model_validate(user)
     user_validated.password = get_password_hash(user_validated.password)
     user_found = user_repository.find_by_email(user_validated.email)
     if user_found:
         raise HTTPException(
-            HTTPStatus.CONFLICT, f"O email {user.email} já existe"
+            HTTPStatus.CONFLICT,
+            f"O email {user.email} já existe",
         )
-    user_repository.create(user_validated)
-    return user_validated
+    user_created = user_repository.create_user_with_roles(
+        user_validated,
+        user.roles_to_assign,
+    )
+    return user_created
 
 
 @user_router.patch("/{user_id}/activate", response_model=UserPresentable)
 async def activate_user(
-    user_id: UUID4, user_data: UserActivate, user_repository: UserRepository
+    user_id: UUID4,
+    user_data: UserActivate,
+    user_repository: UserRepositoryDep,
 ):
     user = user_repository.find_by_id(user_id)
     if not user:
         raise HTTPException(
-            HTTPStatus.NOT_FOUND, detail="Código do usuário não encontrado"
+            HTTPStatus.NOT_FOUND,
+            detail="Código do usuário não encontrado",
         )
 
     if user.activated_at is not None:
         raise HTTPException(
-            HTTPStatus.FORBIDDEN, detail="O usuário já está ativado"
+            HTTPStatus.FORBIDDEN,
+            detail="O usuário já está ativado",
         )
 
     user.password = get_password_hash(user_data.password)
@@ -115,15 +128,18 @@ async def activate_user(
 
 
 @user_router.get(
-    "/{user_id}/activation", response_model=UserActivationPresentable
+    "/{user_id}/activation",
+    response_model=UserActivationPresentable,
 )
 async def read_user_activation(
-    user_id: UUID4, user_repository: UserRepository
+    user_id: UUID4,
+    user_repository: UserRepositoryDep,
 ):
     user = user_repository.find_by_id(user_id)
     if not user:
         raise HTTPException(
-            HTTPStatus.NOT_FOUND, detail="Código do usuário não encontrado"
+            HTTPStatus.NOT_FOUND,
+            detail="Código do usuário não encontrado",
         )
     return user
 
@@ -133,30 +149,33 @@ async def read_user_activation(
     response_model=Pagination[UserPresentable],
     dependencies=[
         Depends(
-            PermissionChecker(subject=Subjects.COMERCIALS, action=Actions.READ)
-        )
+            PermissionChecker(
+                subject=Subjects.COMERCIALS,
+                action=Actions.READ,
+            ),
+        ),
     ],
 )
 async def read_comercials(
-    user_repository: UserRepository,
+    user_repository: UserRepositoryDep,
     filters: ReadUsersQueryParams,
     pagination: PaginationParams,
 ):
     users = user_repository.find_many(
         UserRepositoryFindManyFilters(
             name_or_email_contains=filters.name_or_email_contains,
-            roles_in=[UserRoles.COMERCIAL],
+            roles_in=[RoleType.COMERCIAL],
             offset=get_offset(pagination),
-        )
+        ),
     )
     total = len(
         user_repository.find_many(
             UserRepositoryFindManyFilters(
                 name_or_email_contains=filters.name_or_email_contains,
-                roles_in=[UserRoles.COMERCIAL],
+                roles_in=[RoleType.COMERCIAL],
                 offset=get_offset(pagination),
-            )
-        )
+            ),
+        ),
     )
     return Pagination(
         data=users,

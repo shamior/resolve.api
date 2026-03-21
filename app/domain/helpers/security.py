@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from typing import Annotated
 
@@ -8,7 +8,7 @@ from jwt import DecodeError, ExpiredSignatureError, decode, encode
 from pwdlib import PasswordHash
 
 from app.domain.config.env_config.settings import settings
-from app.domain.repositories.user_repository import UserRepository
+from app.domain.repositories.user_repository import UserRepositoryDep
 from app.infra.database.models import User
 
 hasher = PasswordHash.recommended()
@@ -24,24 +24,28 @@ def get_password_hash(password):
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+    expire = datetime.now(UTC) + timedelta(
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
     )
     to_encode.update({"exp": expire})
     encoded_jwt = encode(
-        to_encode, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+        to_encode,
+        settings.JWT_SECRET,
+        algorithm=settings.ALGORITHM,
     )
     return encoded_jwt
 
 
 def create_refresh_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(
-        days=settings.REFRESH_TOKEN_EXPIRE_DAYS
+    expire = datetime.now(UTC) + timedelta(
+        days=settings.REFRESH_TOKEN_EXPIRE_DAYS,
     )
     to_encode.update({"exp": expire})
     encoded_jwt = encode(
-        to_encode, settings.JWT_SECRET, algorithm=settings.ALGORITHM
+        to_encode,
+        settings.JWT_SECRET,
+        algorithm=settings.ALGORITHM,
     )
     return encoded_jwt
 
@@ -50,7 +54,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 
 def get_current_user(
-    user_repository: UserRepository,
+    user_repository: UserRepositoryDep,
     token: str = Depends(oauth2_scheme),
 ):
     credentials_exception = HTTPException(
@@ -61,7 +65,9 @@ def get_current_user(
 
     try:
         payload = decode(
-            token, settings.JWT_SECRET, algorithms=[settings.ALGORITHM]
+            token,
+            settings.JWT_SECRET,
+            algorithms=[settings.ALGORITHM],
         )
         subject_email = payload.get("sub")
 

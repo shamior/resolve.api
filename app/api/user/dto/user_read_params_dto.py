@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import Depends, Query
 from pydantic import BaseModel
 
-from app.domain.entities.user_entity import UserRoles
+from app.domain.entities.user_role_entity import RoleType
 
 
 class ReadUsersParams(BaseModel):
@@ -11,4 +11,4 @@ class ReadUsersParams(BaseModel):
 
 
 ReadUsersQueryParams = Annotated[ReadUsersParams, Depends()]
-RolesIn = Annotated[list[UserRoles], Query()]
+RolesIn = Annotated[list[RoleType], Query()]

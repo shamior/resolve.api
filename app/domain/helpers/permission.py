@@ -1,24 +1,23 @@
 from enum import Enum
 from http import HTTPStatus
-from typing import List
 
 from fastapi import HTTPException
 
-from app.domain.entities.user_entity import UserRoles
+from app.domain.entities.user_role_entity import RoleType
 from app.domain.helpers.security import CurrentUser
 from app.infra.database.models import User
 
 
-def user_permissions(action: Actions) -> List[UserRoles]:
+def user_permissions(action: Actions) -> list[RoleType]:
     if action == Actions.READ:
-        return [UserRoles.ADMIN]
-    return [UserRoles.ADMIN]
+        return [RoleType.ADMIN]
+    return [RoleType.ADMIN]
 
 
-def comercial_permissions(action: Actions) -> List[UserRoles]:
+def comercial_permissions(action: Actions) -> list[RoleType]:
     if action == Actions.READ:
-        return [UserRoles.ADMIN, UserRoles.EXECUTOR]
-    return [UserRoles.ADMIN]
+        return [RoleType.ADMIN, RoleType.EXECUTOR]
+    return [RoleType.ADMIN]
 
 
 class Actions(str, Enum):
@@ -50,7 +49,8 @@ class PermissionChecker:
     def __call__(self, current_user: CurrentUser) -> User:
         allowed_roles = subject_mapper(self.subject)(self.action)
         allowed = self.permission_checker(
-            user_roles=[current_user.role], allowed_roles=allowed_roles
+            user_roles=[role.role_type for role in current_user.roles],
+            allowed_roles=allowed_roles,
         )
         if not allowed:
             raise HTTPException(
@@ -58,13 +58,11 @@ class PermissionChecker:
                 detail=f"Não é permitido usuário executar \
                     {self.action} em {self.subject}",
             )
-        return User.model_validate(current_user)
+        return current_user
 
     @staticmethod
     def permission_checker(
-        user_roles: List[UserRoles], allowed_roles: List[UserRoles]
+        user_roles: list[RoleType],
+        allowed_roles: list[RoleType],
     ) -> bool:
-        for user_role in user_roles:
-            if user_role in allowed_roles:
-                return True
-        return False
+        return any(user_role in allowed_roles for user_role in user_roles)

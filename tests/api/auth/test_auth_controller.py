@@ -7,11 +7,12 @@ from freezegun import freeze_time
 from app.api.auth.presentable.token_presentable import TokenWithUser
 from app.domain.config.env_config.settings import Settings
 from app.domain.helpers.security import create_refresh_token
-from tests.mocks.user_mock import UserMockWithPassword
+from tests.mocks.user_factory import UserMockWithPassword
 
 
 def test_get_token(
-    app_client: TestClient, user_comercial: UserMockWithPassword
+    app_client: TestClient,
+    user_comercial: UserMockWithPassword,
 ):
     response = app_client.post(
         "/auth/token",
@@ -49,7 +50,8 @@ def test_get_token_expired(
 
     with freeze_time(get_expired_date):
         response = app_client.get(
-            "/users", headers={"Authorization": f"Bearer {token}"}
+            "/users",
+            headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
@@ -83,13 +85,15 @@ def test_get_token_almost_expired(
 
     with freeze_time(get_almost_expired_date):
         response = app_client.get(
-            "/users", headers={"Authorization": f"Bearer {token}"}
+            "/users",
+            headers={"Authorization": f"Bearer {token}"},
         )
         assert response.status_code == HTTPStatus.OK
 
 
 def test_login_with_no_email_found(
-    app_client: TestClient, user_admin: UserMockWithPassword
+    app_client: TestClient,
+    user_admin: UserMockWithPassword,
 ):
     response = app_client.post(
         "/auth/token",
@@ -103,7 +107,8 @@ def test_login_with_no_email_found(
 
 
 def test_login_with_wrong_password(
-    app_client: TestClient, user_admin: UserMockWithPassword
+    app_client: TestClient,
+    user_admin: UserMockWithPassword,
 ):
     response = app_client.post(
         "/auth/token",
@@ -145,8 +150,8 @@ def test_refresh_with_email_not_in_database(app_client: TestClient):
         "/auth/refresh_token",
         json={
             "refresh_token": create_refresh_token({
-                "sub": "thisemailisnotindatabase@email.com"
-            })
+                "sub": "thisemailisnotindatabase@email.com",
+            }),
         },
     )
     assert response.status_code == HTTPStatus.UNAUTHORIZED
@@ -177,7 +182,8 @@ def test_refresh_token_expired(
 
     with freeze_time(get_expired_date):
         response = app_client.post(
-            "/auth/refresh_token", json={"refresh_token": token}
+            "/auth/refresh_token",
+            json={"refresh_token": token},
         )
         assert response.status_code == HTTPStatus.UNAUTHORIZED
 
@@ -211,6 +217,7 @@ def test_refresh_token_almost_expired(
 
     with freeze_time(get_almost_expired_date):
         response = app_client.post(
-            "/auth/refresh_token", json={"refresh_token": token}
+            "/auth/refresh_token",
+            json={"refresh_token": token},
         )
         assert response.status_code == HTTPStatus.OK

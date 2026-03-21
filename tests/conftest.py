@@ -9,14 +9,10 @@ from sqlmodel import Session, SQLModel, StaticPool, create_engine
 
 from app.api.auth.presentable.token_presentable import TokenWithUser
 from app.domain.config.env_config.settings import Settings
-from app.domain.entities.user_entity import UserRoles
+from app.domain.entities.user_role_entity import RoleType
 from app.infra.database.database import get_session
 from app.main import app
-from tests.mocks.user_mock import (
-    UserMockWithPassword,
-    get_user_mock_with_password,
-    insert_user_mock,
-)
+from tests.mocks.user_factory import UserFactory, UserMockWithPassword
 
 
 @pytest.fixture
@@ -73,35 +69,32 @@ def settings():
 
 @pytest.fixture
 def user_comercial(db: Session):
-    user = get_user_mock_with_password(UserRoles.COMERCIAL)
-    user = insert_user_mock(user, db)
-    return user
+    user = UserFactory(db, roles=[RoleType.COMERCIAL])
+    return user[0]
 
 
 @pytest.fixture
 def user_executor(db: Session):
-    user = get_user_mock_with_password(UserRoles.EXECUTOR)
-    user = insert_user_mock(user, db)
-    return user
+    user = UserFactory(db, roles=[RoleType.EXECUTOR])
+    return user[0]
 
 
 @pytest.fixture
 def user_financeiro(db: Session):
-    user = get_user_mock_with_password(UserRoles.FINANCEIRO)
-    user = insert_user_mock(user, db)
-    return user
+    user = UserFactory(db, roles=[RoleType.FINANCEIRO])
+    return user[0]
 
 
 @pytest.fixture
 def user_admin(db: Session):
-    user = get_user_mock_with_password(UserRoles.ADMIN)
-    user = insert_user_mock(user, db)
-    return user
+    user = UserFactory(db, roles=[RoleType.ADMIN])
+    return user[0]
 
 
 @pytest.fixture
 def token_comercial(
-    user_comercial: UserMockWithPassword, app_client: TestClient
+    user_comercial: UserMockWithPassword,
+    app_client: TestClient,
 ):
     response = app_client.post(
         "/auth/token",
@@ -115,7 +108,8 @@ def token_comercial(
 
 @pytest.fixture
 def token_executor(
-    user_executor: UserMockWithPassword, app_client: TestClient
+    user_executor: UserMockWithPassword,
+    app_client: TestClient,
 ):
     response = app_client.post(
         "/auth/token",
@@ -129,7 +123,8 @@ def token_executor(
 
 @pytest.fixture
 def token_financeiro(
-    user_financeiro: UserMockWithPassword, app_client: TestClient
+    user_financeiro: UserMockWithPassword,
+    app_client: TestClient,
 ):
     response = app_client.post(
         "/auth/token",
@@ -142,7 +137,10 @@ def token_financeiro(
 
 
 @pytest.fixture
-def token_admin(user_admin: UserMockWithPassword, app_client: TestClient):
+def token_admin(
+    user_admin: UserMockWithPassword,
+    app_client: TestClient,
+):
     response = app_client.post(
         "/auth/token",
         data={
@@ -155,6 +153,5 @@ def token_admin(user_admin: UserMockWithPassword, app_client: TestClient):
 
 @pytest.fixture
 def user_not_activated(db: Session):
-    user = get_user_mock_with_password(activated_at=None)
-    user = insert_user_mock(user, db)
-    return user
+    user = UserFactory(db, activated_at=None)
+    return user[0]

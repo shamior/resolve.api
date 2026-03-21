@@ -6,7 +6,6 @@ from app.api.user.users_controller import user_router
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
-#     SQLModel.metadata.create_all(engine)
 #     yield
 
 

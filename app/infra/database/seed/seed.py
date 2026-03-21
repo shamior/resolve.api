@@ -2,42 +2,51 @@ from datetime import datetime
 
 from sqlmodel import Session
 
-from app.database import engine
-from app.helpers.security import get_password_hash
-from app.models.user_model import User, UserRoles
+from app.domain.entities.user_role_entity import RoleType
+from app.domain.helpers.security import get_password_hash
+from app.domain.repositories.user_repository import UserRepository
+from app.infra.database.database import engine
+from app.infra.database.models import User
 
 
 def create_users(session: Session):
-    comercial = User(
-        name="Comercial da Silva",
-        role=UserRoles.COMERCIAL,
-        password=get_password_hash("pass123"),
-        email="comercial@email.com",
-        activated_at=datetime.now(),
+    repository = UserRepository(session)
+    repository.create_user_with_roles(
+        User(
+            name="Comercial da Silva",
+            password=get_password_hash("pass123"),
+            email="comercial@email.com",
+            activated_at=datetime.now(),
+        ),
+        [RoleType.COMERCIAL],
     )
-    executor = User(
-        name="Executor Divino",
-        role=UserRoles.EXECUTOR,
-        password=get_password_hash("pass123"),
-        email="executor@email.com",
-        activated_at=datetime.now(),
+    repository.create_user_with_roles(
+        User(
+            name="Executor Divino",
+            password=get_password_hash("pass123"),
+            email="executor@email.com",
+            activated_at=datetime.now(),
+        ),
+        [RoleType.EXECUTOR],
     )
-    financeiro = User(
-        name="Financeiro do Dinheiro",
-        role=UserRoles.FINANCEIRO,
-        password=get_password_hash("pass123"),
-        email="financeiro@email.com",
-        activated_at=datetime.now(),
+    repository.create_user_with_roles(
+        User(
+            name="Financeiro do Dinheiro",
+            password=get_password_hash("pass123"),
+            email="financeiro@email.com",
+            activated_at=datetime.now(),
+        ),
+        [RoleType.FINANCEIRO],
     )
-    admin = User(
-        name="Adminaldo Manda Tudo",
-        role=UserRoles.ADMIN,
-        password=get_password_hash("pass123"),
-        email="admin@email.com",
-        activated_at=datetime.now(),
+    repository.create_user_with_roles(
+        User(
+            name="Adminaldo Manda Tudo",
+            password=get_password_hash("pass123"),
+            email="admin@email.com",
+            activated_at=datetime.now(),
+        ),
+        [RoleType.ADMIN],
     )
-    session.add_all([comercial, executor, financeiro, admin])
-    session.commit()
 
 
 def seed():

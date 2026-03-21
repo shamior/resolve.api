@@ -18,7 +18,8 @@ def test_jwt(settings):
 
 def test_jwt_with_invalid_token(app_client: TestClient):
     response = app_client.get(
-        "/users", headers={"Authorization": "Bearer bomba"}
+        "/users",
+        headers={"Authorization": "Bearer bomba"},
     )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
@@ -37,7 +38,7 @@ def test_jwt_with_no_valid_email(app_client: TestClient):
     response = app_client.get(
         "/users",
         headers={
-            "Authorization": f"Bearer {create_access_token({'sub': 'email'})}"
+            "Authorization": f"Bearer {create_access_token({'sub': 'email'})}",
         },
     )
 

@@ -1,4 +1,5 @@
-from typing import Annotated, Sequence
+from collections.abc import Sequence
+from typing import Annotated
 
 from fastapi import Depends
 from pydantic import UUID4
@@ -17,7 +18,7 @@ class ServiceRepositoryFactory:
         select_clause = select(Service)
         if not retrieve_deleted:
             select_clause = select_clause.where(
-                col(Service.deleted_at).is_(None)
+                col(Service.deleted_at).is_(None),
             )
         return select_clause
 
@@ -31,8 +32,8 @@ class ServiceRepositoryFactory:
                 or_(
                     Service.comercial_id == user_id,
                     Service.executor == user_id,
-                )
-            )
+                ),
+            ),
         ).all()
         return services
 

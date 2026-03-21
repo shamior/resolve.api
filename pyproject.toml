@@ -23,7 +23,25 @@ extend-exclude = ['migrations']
 
 [tool.ruff.lint]
 preview = true
-select = ["I", "F", "E", "W", "PL", "PT", "FAST"]
+select = [
+    "I",        # Ordena as importações direitinho
+    "F",        # Regras do Pyflakes
+    "E",        # Erros do PyCodeStyle
+    "W",        # Avisos do PyCodeStyle
+    "PL",       # pylint
+    "PT",       # pytest
+    "FAST",     # fastapi
+    "COM",      # impõe regras de vírgula final
+    "N",        # impõe convenções de nomenclatura, e.g., ClassName vs function_name
+    "C4",       # Pega o uso incorreto de comprehensions, dict, list, etc
+    "ISC",      # Bom uso de concatenação de strings
+    "SIM",      # Regras comuns de simplificação
+    "TID",      # Algumas boas práticas de importação
+]
+ignore = [
+    "PLR0913",  # Too many arguments for a function
+    "PLR0917",  # Too many positional arguments
+]
 
 [tool.ruff.format]
 preview = true

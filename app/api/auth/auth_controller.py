@@ -13,14 +13,17 @@ from app.domain.helpers.security import (
     create_refresh_token,
     verify_password,
 )
-from app.domain.repositories.user_repository import UserRepository
+from app.domain.repositories.user_repository import (
+    UserRepositoryDep,
+)
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @auth_router.post("/token", response_model=TokenWithUser)
 async def login_for_access_token(
-    form_data: OAuth2Form, user_repository: UserRepository
+    form_data: OAuth2Form,
+    user_repository: UserRepositoryDep,
 ):
     user = user_repository.find_by_email(email=form_data.username)
 
@@ -48,7 +51,8 @@ async def login_for_access_token(
 
 @auth_router.post("/refresh_token", response_model=TokenWithUser)
 async def refresh_access_token(
-    body: RefreshDTO, user_repository: UserRepository
+    body: RefreshDTO,
+    user_repository: UserRepositoryDep,
 ):
     credentials_exception = HTTPException(
         status_code=HTTPStatus.UNAUTHORIZED,

@@ -1,20 +1,13 @@
 from sqlmodel import Session, select
 
-from app.domain.entities.user_entity import UserRoles
 from app.infra.database.models import User
+from tests.mocks.user_factory import UserFactory
 
 
 def test_event(db: Session, mock_db_time):
     with mock_db_time(model=User) as time:
-        user = User(
-            email="email@email.com",
-            name="nice name",
-            password="senha",
-            role=UserRoles.ADMIN,
-        )
-        db.add(user)
-        db.commit()
+        UserFactory(db)[0]
 
-        user_retrieved = db.exec(select(User)).one_or_none()
+        user_retrieved = db.exec(select(User)).first()
         assert user_retrieved is not None
         assert user_retrieved.created_at == time

@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from math import ceil
-from typing import Annotated, Generic, Sequence, TypeVar
+from typing import Annotated, Generic, TypeVar
 
 from fastapi import Depends, Query
 from pydantic import BaseModel

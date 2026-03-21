@@ -7,13 +7,14 @@ from faker import Faker
 from fastapi.testclient import TestClient
 
 from app.api.auth.presentable.token_presentable import TokenWithUser
-from app.domain.entities.user_entity import UserRoles
+from app.domain.entities.user_role_entity import RoleType
 from app.infra.database.database import Database
-from tests.mocks.user_mock import UserFactory, UserMockWithPassword
+from tests.mocks.user_factory import UserFactory, UserMockWithPassword
 
 
 def test_admin_should_read_users(
-    token_admin: TokenWithUser, app_client: TestClient
+    token_admin: TokenWithUser,
+    app_client: TestClient,
 ):
     response = app_client.get(
         "/users",
@@ -27,14 +28,16 @@ def test_admin_should_read_users(
 
 
 def test_read_users_paginated(
-    token_admin: TokenWithUser, app_client: TestClient, db: Database
+    token_admin: TokenWithUser,
+    app_client: TestClient,
+    db: Database,
 ):
     batch_size = 102  # 103 com o admin numero primo, bacana
-    users_batch = UserFactory.create_batch(
-        batch_size, activated_at=datetime.now()
+    UserFactory(
+        db,
+        batch_size=batch_size,
+        activated_at=datetime.now(),
     )
-    db.add_all(users_batch)
-    db.commit()
 
     page = 2
     per_page = 17
@@ -52,15 +55,17 @@ def test_read_users_paginated(
 
 
 def test_read_users_filters_name(
-    token_admin: TokenWithUser, app_client: TestClient, db: Database
+    token_admin: TokenWithUser,
+    app_client: TestClient,
+    db: Database,
 ):
     batch_size = 102  # 103 com o admin numero primo, bacana
     total_users = batch_size + 1
-    users_batch = UserFactory.create_batch(
-        batch_size, activated_at=datetime.now()
+    UserFactory(
+        db,
+        batch_size=batch_size,
+        activated_at=datetime.now(),
     )
-    db.add_all(users_batch)
-    db.commit()
 
     name_contains = "1"
     response_name = app_client.get(
@@ -72,25 +77,28 @@ def test_read_users_filters_name(
     assert response_name.status_code == HTTPStatus.OK
     assert users_name_test1["total"] < total_users
     assert len(users_name_test1["data"]) > 0
-    assert all([
+    assert all(
         (name_contains in user["name"] or name_contains in user["email"])
         for user in users_name_test1["data"]
-    ])
+    )
 
 
 def test_read_users_filters_role(
-    token_admin: TokenWithUser, app_client: TestClient, db: Database
+    token_admin: TokenWithUser,
+    app_client: TestClient,
+    db: Database,
 ):
-    available_roles = list(UserRoles)
+    available_roles = list(RoleType)
     roles = random.sample(
-        available_roles, k=random.randint(1, len(available_roles))
+        available_roles,
+        k=random.randint(1, len(available_roles)),
     )
     batch_size = 102  # 103 com o admin numero primo, bacana
-    users_batch = UserFactory.create_batch(
-        batch_size, activated_at=datetime.now()
+    UserFactory(
+        db,
+        batch_size=batch_size,
+        activated_at=datetime.now(),
     )
-    db.add_all(users_batch)
-    db.commit()
 
     response_name = app_client.get(
         "/users",
@@ -100,11 +108,18 @@ def test_read_users_filters_role(
     users = response_name.json()
     assert response_name.status_code == HTTPStatus.OK
     assert len(users["data"]) > 0
-    assert all([user["role"] in roles for user in users["data"]])
+    assert all(
+        any(
+            role.value in [r["role_type"] for r in user["roles"]]
+            for role in roles
+        )
+        for user in users["data"]
+    )
 
 
 def test_comercial_should_not_read_users(
-    token_comercial: TokenWithUser, app_client: TestClient
+    token_comercial: TokenWithUser,
+    app_client: TestClient,
 ):
     response = app_client.get(
         "/users",
@@ -114,7 +129,8 @@ def test_comercial_should_not_read_users(
 
 
 def test_executor_should_not_read_users(
-    token_executor: TokenWithUser, app_client: TestClient
+    token_executor: TokenWithUser,
+    app_client: TestClient,
 ):
     response = app_client.get(
         "/users",
@@ -124,7 +140,8 @@ def test_executor_should_not_read_users(
 
 
 def test_financeiro_should_not_read_users(
-    token_financeiro: TokenWithUser, app_client: TestClient
+    token_financeiro: TokenWithUser,
+    app_client: TestClient,
 ):
     response = app_client.get(
         "/users",
@@ -134,53 +151,62 @@ def test_financeiro_should_not_read_users(
 
 
 def test_admin_should_create_users(
-    token_admin: TokenWithUser, app_client: TestClient
+    token_admin: TokenWithUser,
+    app_client: TestClient,
 ):
     fake = Faker()
     email = fake.email()
-    role = fake.enum(UserRoles)
+    roles_available = [r.value for r in list(RoleType)]
+    roles = random.sample(
+        roles_available,
+        random.randint(1, len(roles_available)),
+    )
     name = fake.name()
     response = app_client.post(
         "/users",
         headers={"Authorization": f"Bearer {token_admin.access_token}"},
         json={
             "email": email,
-            "role": role,
+            "roles_to_assign": roles,
             "name": name,
         },
     )
     user = response.json()
     assert response.status_code == HTTPStatus.CREATED
     assert user["email"] == email
-    assert user["role"] == role
+    assert all(role["role_type"] in roles_available for role in user["roles"])
     assert user["name"] == name
     assert "id" in user
 
 
 def test_create_users_email_should_be_unique(
-    token_admin: TokenWithUser, app_client: TestClient
+    token_admin: TokenWithUser,
+    app_client: TestClient,
 ):
     fake = Faker()
     email = fake.email()
-    role = fake.enum(UserRoles)
+    roles_available = [r.value for r in list(RoleType)]
+    roles = random.sample(
+        roles_available,
+        random.randint(1, len(roles_available)),
+    )
     name = fake.name()
     first_response = app_client.post(
         "/users",
         headers={"Authorization": f"Bearer {token_admin.access_token}"},
         json={
             "email": email,
-            "role": role,
+            "roles_to_assign": roles,
             "name": name,
         },
     )
-    role = fake.enum(UserRoles)
     name = fake.name()
     second_response = app_client.post(
         "/users",
         headers={"Authorization": f"Bearer {token_admin.access_token}"},
         json={
             "email": email,
-            "role": role,
+            "roles_to_assign": roles,
             "name": name,
         },
     )
@@ -191,14 +217,15 @@ def test_create_users_email_should_be_unique(
 
 
 def test_comercial_should_not_create_users(
-    token_comercial: TokenWithUser, app_client: TestClient
+    token_comercial: TokenWithUser,
+    app_client: TestClient,
 ):
     response = app_client.post(
         "/users",
         headers={"Authorization": f"Bearer {token_comercial.access_token}"},
         json={
             "email": "emailtest@test.com",
-            "role": UserRoles.COMERCIAL,
+            "roles_to_assign": [RoleType.COMERCIAL],
             "name": "testzinho da silva",
         },
     )
@@ -207,14 +234,15 @@ def test_comercial_should_not_create_users(
 
 
 def test_executor_should_not_create_users(
-    token_executor: TokenWithUser, app_client: TestClient
+    token_executor: TokenWithUser,
+    app_client: TestClient,
 ):
     response = app_client.post(
         "/users",
         headers={"Authorization": f"Bearer {token_executor.access_token}"},
         json={
             "email": "emailtest@test.com",
-            "role": UserRoles.COMERCIAL,
+            "roles_to_assign": [RoleType.COMERCIAL],
             "name": "testzinho da silva",
         },
     )
@@ -223,14 +251,15 @@ def test_executor_should_not_create_users(
 
 
 def test_financeiro_should_not_create_users(
-    token_financeiro: TokenWithUser, app_client: TestClient
+    token_financeiro: TokenWithUser,
+    app_client: TestClient,
 ):
     response = app_client.post(
         "/users",
         headers={"Authorization": f"Bearer {token_financeiro.access_token}"},
         json={
             "email": "emailtest@test.com",
-            "role": UserRoles.COMERCIAL,
+            "roles_to_assign": [RoleType.COMERCIAL],
             "name": "testzinho da silva",
         },
     )
@@ -249,7 +278,6 @@ def test_anyone_should_activate_user(
     user = response.json()
     assert response.status_code == HTTPStatus.OK
     assert user["email"] == user_not_activated.email
-    assert user["role"] == user_not_activated.role
     assert user["name"] == user_not_activated.name
     assert "id" in user
 
@@ -266,7 +294,8 @@ def test_activate_user_shoud_have_valid_user_id(
 
 
 def test_activate_user_should_not_activate_activated_user(
-    app_client: TestClient, user_comercial: UserMockWithPassword
+    app_client: TestClient,
+    user_comercial: UserMockWithPassword,
 ):
     response = app_client.patch(
         f"/users/{user_comercial.id}/activate",
@@ -277,18 +306,22 @@ def test_activate_user_should_not_activate_activated_user(
 
 
 def test_read_comercials(
-    app_client: TestClient, token_admin: TokenWithUser, db: Database
+    app_client: TestClient,
+    token_admin: TokenWithUser,
+    db: Database,
 ):
     batch_size = 50
-    users_batch = UserFactory.create_batch(
-        batch_size, activated_at=datetime.now()
+    UserFactory(
+        db,
+        batch_size=batch_size,
+        activated_at=datetime.now(),
     )
-    users_batch_comercial = UserFactory.create_batch(
-        batch_size, activated_at=datetime.now(), role=UserRoles.COMERCIAL
+    UserFactory(
+        db,
+        batch_size=batch_size,
+        activated_at=datetime.now(),
+        roles=[RoleType.COMERCIAL],
     )
-    db.add_all(users_batch)
-    db.add_all(users_batch_comercial)
-    db.commit()
     response = app_client.get(
         "/users/comercials",
         headers={"Authorization": f"Bearer {token_admin.access_token}"},
@@ -296,13 +329,15 @@ def test_read_comercials(
     assert response.status_code == HTTPStatus.OK
     users = response.json()
     assert users["total"] >= batch_size
-    assert all([
-        user["role"] == UserRoles.COMERCIAL.value for user in users["data"]
-    ])
+    assert all(
+        {"role_type": RoleType.COMERCIAL.value} in user["roles"]
+        for user in users["data"]
+    )
 
 
 def test_read_user_activation(
-    app_client: TestClient, user_comercial: UserMockWithPassword
+    app_client: TestClient,
+    user_comercial: UserMockWithPassword,
 ):
     response = app_client.get(f"/users/{user_comercial.id}/activation")
     data = response.json()
@@ -311,7 +346,8 @@ def test_read_user_activation(
 
 
 def test_read_user_activation_with_wrong_id(
-    app_client: TestClient, user_comercial: UserMockWithPassword
+    app_client: TestClient,
+    user_comercial: UserMockWithPassword,
 ):
     response = app_client.get(f"/users/{uuid.uuid4()}/activation")
     assert response.status_code == HTTPStatus.NOT_FOUND
