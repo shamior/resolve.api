@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int
     ALGORITHM: str
     JWT_SECRET: str
+    STORAGE_DIR: str
+    DOCUMENTS_DIR: str
+    RECEIPTS_DIR: str
 
 
 settings = Settings()  # pyright: ignore[reportCallIssue]

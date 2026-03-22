@@ -1,8 +1,7 @@
-from pydantic import UUID4
-from sqlmodel import Field
-
-from app.domain.entities.document_entity import DocumentEntity
+from pydantic import UUID4, BaseModel, Field
 
 
-class DocumentPresentable(DocumentEntity):
+class DocumentPresentable(BaseModel):
     id: UUID4 = Field()
+    name: str = Field()
+    client_id: UUID4 = Field()
