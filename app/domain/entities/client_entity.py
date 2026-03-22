@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from enum import Enum
 
 from pydantic import EmailStr
@@ -14,7 +14,7 @@ class ClientEntity(SQLModel):
     name: str = Field()
     phone: str = Field()
     country_code: str = Field(foreign_key="country.code")
-    birthdate: datetime = Field()
+    birthdate: date = Field()
     email: EmailStr = Field()
     passport: str = Field()
     logged_in_as: LoggedInAs = Field(default=LoggedInAs.NOT_LOGGED_IN)

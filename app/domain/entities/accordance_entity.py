@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import date
 
 from sqlmodel import Field, SQLModel
 
 
 class AccordanceEntity(SQLModel):
-    promised_to: datetime = Field()
+    promised_to: date = Field()
     notes: str = Field()

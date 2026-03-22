@@ -28,7 +28,7 @@ def upgrade() -> None:
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
-    sa.Column('promised_to', sa.DateTime(), nullable=False),
+    sa.Column('promised_to', sa.Date(), nullable=False),
     sa.Column('notes', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -100,7 +100,7 @@ def upgrade() -> None:
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('country_code', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('birthdate', sa.DateTime(), nullable=False),
+    sa.Column('birthdate', sa.Date(), nullable=False),
     sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('passport', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('logged_in_as', sa.Enum('NOT_LOGGED_IN', 'THUNDERBIRD', name='loggedinas'), nullable=False),
