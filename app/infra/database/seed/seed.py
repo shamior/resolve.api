@@ -52,3 +52,7 @@ def create_users(session: Session):
 def seed():
     with Session(engine) as session:
         create_users(session)
+
+
+if __name__ == "__main__":
+    seed()
