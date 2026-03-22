@@ -1,4 +1,3 @@
-import json
 from contextlib import contextmanager
 from datetime import datetime
 
@@ -8,8 +7,13 @@ from sqlalchemy import event
 from sqlmodel import Session, SQLModel, StaticPool, create_engine
 
 from app.api.auth.presentable.token_presentable import TokenWithUser
+from app.api.user.presentable.user_presentable import UserPresentable
 from app.domain.config.env_config.settings import Settings
 from app.domain.entities.user_role_entity import RoleType
+from app.domain.helpers.security import (
+    create_access_token,
+    create_refresh_token,
+)
 from app.infra.database.database import get_session
 from app.main import app
 from tests.mocks.user_factory import UserFactory, UserMockWithPassword
@@ -91,64 +95,76 @@ def user_admin(db: Session):
     return user[0]
 
 
-@pytest.fixture
-def token_comercial(
-    user_comercial: UserMockWithPassword,
-    app_client: TestClient,
-):
-    response = app_client.post(
-        "/auth/token",
-        data={
-            "username": user_comercial.email,
-            "password": user_comercial.clean_password,
-        },
-    )
-    return TokenWithUser.model_validate_json(json.dumps(response.json()))
+@pytest.fixture(
+    params=[
+        "user_admin",
+        "user_comercial",
+        "user_executor",
+        "user_financeiro",
+    ],
+)
+def user_all_roles(request):
+    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture
-def token_executor(
-    user_executor: UserMockWithPassword,
-    app_client: TestClient,
-):
-    response = app_client.post(
-        "/auth/token",
-        data={
-            "username": user_executor.email,
-            "password": user_executor.clean_password,
-        },
+def token_comercial(user_comercial: UserMockWithPassword):
+    access_token = create_access_token({"sub": user_comercial.email})
+    refresh_token = create_refresh_token({"sub": user_comercial.email})
+    return TokenWithUser(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        user=UserPresentable.model_validate(user_comercial),
     )
-    return TokenWithUser.model_validate_json(json.dumps(response.json()))
 
 
 @pytest.fixture
-def token_financeiro(
-    user_financeiro: UserMockWithPassword,
-    app_client: TestClient,
-):
-    response = app_client.post(
-        "/auth/token",
-        data={
-            "username": user_financeiro.email,
-            "password": user_financeiro.clean_password,
-        },
+def token_executor(user_executor: UserMockWithPassword):
+    access_token = create_access_token({"sub": user_executor.email})
+    refresh_token = create_refresh_token({"sub": user_executor.email})
+    return TokenWithUser(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        user=UserPresentable.model_validate(user_executor),
     )
-    return TokenWithUser.model_validate_json(json.dumps(response.json()))
 
 
 @pytest.fixture
-def token_admin(
-    user_admin: UserMockWithPassword,
-    app_client: TestClient,
-):
-    response = app_client.post(
-        "/auth/token",
-        data={
-            "username": user_admin.email,
-            "password": user_admin.clean_password,
-        },
+def token_financeiro(user_financeiro: UserMockWithPassword):
+    access_token = create_access_token({"sub": user_financeiro.email})
+    refresh_token = create_refresh_token({"sub": user_financeiro.email})
+    return TokenWithUser(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        user=UserPresentable.model_validate(user_financeiro),
     )
-    return TokenWithUser.model_validate_json(json.dumps(response.json()))
+
+
+@pytest.fixture
+def token_admin(user_admin: UserMockWithPassword):
+    access_token = create_access_token({"sub": user_admin.email})
+    refresh_token = create_refresh_token({"sub": user_admin.email})
+    return TokenWithUser(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        user=UserPresentable.model_validate(user_admin),
+    )
+
+
+@pytest.fixture(
+    params=[
+        "token_admin",
+        "token_comercial",
+        "token_executor",
+        "token_financeiro",
+    ],
+)
+def token_all_roles(request):
+    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture
