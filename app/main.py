@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from app.api.auth.auth_controller import auth_router
 from app.api.client.client_controller import client_router
+from app.api.countries.countries_controller import country_router
 from app.api.document.document_controller import document_router
 from app.api.service.service_controller import service_router
 from app.api.user.users_controller import user_router
@@ -30,3 +31,4 @@ app.include_router(auth_router)
 app.include_router(service_router)
 app.include_router(document_router)
 app.include_router(client_router)
+app.include_router(country_router)

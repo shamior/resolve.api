@@ -11,13 +11,15 @@ dependencies = [
     "sqlmodel (>=0.0.37,<0.0.38)",
     "pwdlib[argon2] (>=0.3.0,<0.4.0)",
     "pyjwt (>=2.11.0,<3.0.0)",
-    "alembic (>=1.18.4,<2.0.0)"
+    "alembic (>=1.18.4,<2.0.0)",
+    "pycountry (>=26.2.16,<27.0.0)",
 ]
 
 [tool.poetry]
 packages = [{include = "resolve"}]
 
 [tool.ruff]
+builtins = ["_"]
 line-length = 79
 extend-exclude = ['migrations']
 
@@ -67,6 +69,11 @@ post_test = "coverage html"
 
 pre_ptest = "task pre_test"
 ptest = "pytest -s -vv"
+
+gen_migration = "alembic revision --autogenerate -m"
+migrate = "alembic upgrade head"
+
+seed = "python -m app.infra.database.seed.seed"
 
 
 [build-system]

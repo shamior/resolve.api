@@ -14,10 +14,17 @@ def user_permissions(action: Actions) -> list[RoleType]:
     return [RoleType.ADMIN]
 
 
-def comercial_permissions(action: Actions) -> list[RoleType]:
-    if action == Actions.READ:
-        return [RoleType.ADMIN, RoleType.EXECUTOR]
-    return [RoleType.ADMIN]
+def comercial_permissions(_action: Actions) -> list[RoleType]:
+    return [RoleType.ADMIN, RoleType.EXECUTOR]
+
+
+def country_permissions(_action: Actions) -> list[RoleType]:
+    return [
+        RoleType.ADMIN,
+        RoleType.EXECUTOR,
+        RoleType.FINANCEIRO,
+        RoleType.COMERCIAL,
+    ]
 
 
 class Actions(str, Enum):
@@ -30,12 +37,14 @@ class Actions(str, Enum):
 class Subjects(str, Enum):
     USERS = "USERS"
     COMERCIALS = "COMERCIALS"
+    COUNTRIES = "COUNTRIES"
 
 
 def subject_mapper(subject: Subjects):
     mapper = {
         Subjects.USERS: user_permissions,
         Subjects.COMERCIALS: comercial_permissions,
+        Subjects.COUNTRIES: country_permissions,
     }
 
     return mapper[subject]

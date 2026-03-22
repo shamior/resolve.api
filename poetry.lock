@@ -1177,6 +1177,18 @@ argon2 = ["argon2-cffi (>=23.1.0,<26)"]
 bcrypt = ["bcrypt (>=4.1.2,<6)"]
 
 [[package]]
+name = "pycountry"
+version = "26.2.16"
+description = "ISO country, subdivision, language, currency and script definitions and their translations"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "pycountry-26.2.16-py3-none-any.whl", hash = "sha256:115c4baf7cceaa30f59a4694d79483c9167dbce7a9de4d3d571c5f3ea77c305a"},
+    {file = "pycountry-26.2.16.tar.gz", hash = "sha256:5b6027d453fcd6060112b951dd010f01f168b51b4bf8a1f1fc8c95c8d94a0801"},
+]
+
+[[package]]
 name = "pycparser"
 version = "3.0"
 description = "C parser in Python"
@@ -2484,4 +2496,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.14,<4.0"
-content-hash = "534fbaa36d8b3a7b1e2d37f91c38dd732727fc474a74f482713cb7fbae23f85b"
+content-hash = "abec11ff8ba512ea68c4ac0eb407289dff433eb8038f8726e67dc22a28a4986c"

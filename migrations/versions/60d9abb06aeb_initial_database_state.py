@@ -1,8 +1,8 @@
 """initial database state
 
-Revision ID: 42f4fac33c98
-Revises: 
-Create Date: 2026-03-13 19:08:32.621436
+Revision ID: 60d9abb06aeb
+Revises:
+Create Date: 2026-03-22 03:12:33.832148
 
 """
 from typing import Sequence, Union
@@ -10,10 +10,12 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 import sqlmodel
+import pycountry
+import gettext
 
 
 # revision identifiers, used by Alembic.
-revision: str = '42f4fac33c98'
+revision: str = '60d9abb06aeb'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -31,19 +33,10 @@ def upgrade() -> None:
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('client',
-    sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    country_table = op.create_table('country',
+    sa.Column('code', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('citizenship', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('birthdate', sa.DateTime(), nullable=False),
-    sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('passport', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('logged_in_as', sa.Enum('NOT_LOGGED_IN', 'THUNDERBIRD', name='loggedinas'), nullable=False),
-    sa.Column('id', sa.Uuid(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('code')
     )
     op.create_table('receipt',
     sa.Column('created_at', sa.DateTime(), nullable=False),
@@ -87,13 +80,48 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('role', sa.Enum('COMERCIAL', 'EXECUTOR', 'FINANCEIRO', 'ADMIN', name='userroles'), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('activated_at', sa.DateTime(), nullable=True),
     sa.Column('password', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
+    )
+    op.create_table('userrole',
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('role_type', sa.Enum('COMERCIAL', 'EXECUTOR', 'FINANCEIRO', 'ADMIN', name='roletype'), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('role_type')
+    )
+    op.create_table('client',
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('deleted_at', sa.DateTime(), nullable=True),
+    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('country_code', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('birthdate', sa.DateTime(), nullable=False),
+    sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('passport', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('logged_in_as', sa.Enum('NOT_LOGGED_IN', 'THUNDERBIRD', name='loggedinas'), nullable=False),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.ForeignKeyConstraint(['country_code'], ['country.code'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('fieldlink',
+    sa.Column('service_type_id', sa.Uuid(), nullable=False),
+    sa.Column('field_type_id', sa.Uuid(), nullable=False),
+    sa.ForeignKeyConstraint(['field_type_id'], ['servicefieldtype.id'], ),
+    sa.ForeignKeyConstraint(['service_type_id'], ['servicetype.id'], ),
+    sa.PrimaryKeyConstraint('service_type_id', 'field_type_id')
+    )
+    op.create_table('rolelink',
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('user_id', sa.Uuid(), nullable=False),
+    sa.Column('role_id', sa.Uuid(), nullable=False),
+    sa.ForeignKeyConstraint(['role_id'], ['userrole.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id', 'user_id', 'role_id')
     )
     op.create_table('document',
     sa.Column('created_at', sa.DateTime(), nullable=False),
@@ -105,13 +133,6 @@ def upgrade() -> None:
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['client_id'], ['client.id'], ),
     sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('fieldlink',
-    sa.Column('service_type_id', sa.Uuid(), nullable=False),
-    sa.Column('field_type_id', sa.Uuid(), nullable=False),
-    sa.ForeignKeyConstraint(['field_type_id'], ['servicefieldtype.id'], ),
-    sa.ForeignKeyConstraint(['service_type_id'], ['servicetype.id'], ),
-    sa.PrimaryKeyConstraint('service_type_id', 'field_type_id')
     )
     op.create_table('service',
     sa.Column('created_at', sa.DateTime(), nullable=False),
@@ -211,6 +232,16 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
+    pt = gettext.translation(
+        "iso3166-1",
+        pycountry.LOCALES_DIR,
+        languages=["pt"],
+    )
+    pt.install()
+    op.bulk_insert(country_table, [{
+        'code': country.alpha_3,
+        'name': _(country.name),  # type: ignore
+    } for country in pycountry.countries ])
 
 
 def downgrade() -> None:
@@ -223,13 +254,16 @@ def downgrade() -> None:
     op.drop_table('payment')
     op.drop_table('appointment')
     op.drop_table('service')
-    op.drop_table('fieldlink')
     op.drop_table('document')
+    op.drop_table('rolelink')
+    op.drop_table('fieldlink')
+    op.drop_table('client')
+    op.drop_table('userrole')
     op.drop_table('user')
     op.drop_table('servicetype')
     op.drop_table('servicestatus')
     op.drop_table('servicefieldtype')
     op.drop_table('receipt')
-    op.drop_table('client')
+    op.drop_table('country')
     op.drop_table('accordance')
     # ### end Alembic commands ###

@@ -79,6 +79,14 @@ class Client(ClientEntity, WithDateModel, table=True):
 
     services: List["Service"] = Relationship(back_populates="client")
     documents: List["Document"] = Relationship(back_populates="client")
+    country: "Country" = Relationship(back_populates="clients")
+
+
+class Country(SQLModel, table=True):
+    code: str = Field(primary_key=True)
+    name: str
+
+    clients: List["Client"] = Relationship(back_populates="country")
 
 
 class FieldLink(SQLModel, table=True):

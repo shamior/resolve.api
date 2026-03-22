@@ -13,7 +13,7 @@ class LoggedInAs(str, Enum):
 class ClientEntity(SQLModel):
     name: str = Field()
     phone: str = Field()
-    citizenship: str = Field()  # TODO: deixar de ser string
+    country_code: str = Field(foreign_key="country.code")
     birthdate: datetime = Field()
     email: EmailStr = Field()
     passport: str = Field()
