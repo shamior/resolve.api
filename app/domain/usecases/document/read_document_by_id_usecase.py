@@ -13,7 +13,7 @@ class ReadDocumentByIdUseCase:
         self.documents_repository = documents_repository
 
     def execute(self, document_id: UUID4) -> Document:
-        document = self.documents_repository.find_document_by_id(document_id)
+        document = self.documents_repository.find_by_id(document_id)
         if not document:
             raise HTTPException(
                 HTTPStatus.NOT_FOUND,

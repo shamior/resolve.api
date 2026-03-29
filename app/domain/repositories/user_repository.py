@@ -51,8 +51,8 @@ class UserRepository:
         if filters.name_or_email_contains:
             query = query.where(
                 or_(
-                    col(User.name).contains(filters.name_or_email_contains),
-                    col(User.email).contains(filters.name_or_email_contains),
+                    col(User.name).icontains(filters.name_or_email_contains),
+                    col(User.email).icontains(filters.name_or_email_contains),
                 ),
             )
         if filters.roles_in:

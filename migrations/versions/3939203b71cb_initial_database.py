@@ -1,21 +1,21 @@
-"""initial database state
+"""initial database
 
-Revision ID: 60d9abb06aeb
+Revision ID: 3939203b71cb
 Revises:
-Create Date: 2026-03-22 03:12:33.832148
+Create Date: 2026-03-27 15:52:34.118392
 
 """
+import gettext
+import pycountry
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
 import sqlmodel
-import pycountry
-import gettext
 
 
 # revision identifiers, used by Alembic.
-revision: str = '60d9abb06aeb'
+revision: str = '3939203b71cb'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -99,7 +99,7 @@ def upgrade() -> None:
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('country_code', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('country_code', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('birthdate', sa.Date(), nullable=False),
     sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('passport', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -129,7 +129,8 @@ def upgrade() -> None:
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('path', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('client_id', sa.Uuid(), nullable=False),
+    sa.Column('mime_type', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('client_id', sa.Uuid(), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['client_id'], ['client.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -140,11 +141,11 @@ def upgrade() -> None:
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('started_at', sa.DateTime(), nullable=False),
     sa.Column('finished_at', sa.DateTime(), nullable=True),
-    sa.Column('client_id', sa.Uuid(), nullable=False),
-    sa.Column('service_status_id', sa.Uuid(), nullable=False),
-    sa.Column('executor_id', sa.Uuid(), nullable=False),
-    sa.Column('comercial_id', sa.Uuid(), nullable=False),
-    sa.Column('service_type_id', sa.Uuid(), nullable=False),
+    sa.Column('client_id', sa.Uuid(), nullable=True),
+    sa.Column('service_status_id', sa.Uuid(), nullable=True),
+    sa.Column('executor_id', sa.Uuid(), nullable=True),
+    sa.Column('comercial_id', sa.Uuid(), nullable=True),
+    sa.Column('service_type_id', sa.Uuid(), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['client_id'], ['client.id'], ),
     sa.ForeignKeyConstraint(['comercial_id'], ['user.id'], ),
@@ -160,7 +161,7 @@ def upgrade() -> None:
     sa.Column('status', sa.Enum('SCHEDULED', 'FINISHED', name='appointmentstatus'), nullable=False),
     sa.Column('scheduled_to', sa.DateTime(), nullable=False),
     sa.Column('site', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('service_id', sa.Uuid(), nullable=False),
+    sa.Column('service_id', sa.Integer(), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['service_id'], ['service.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -174,7 +175,7 @@ def upgrade() -> None:
     sa.Column('amount', sa.Integer(), nullable=False),
     sa.Column('receipt_id', sa.Uuid(), nullable=True),
     sa.Column('accordance_id', sa.Uuid(), nullable=True),
-    sa.Column('service_id', sa.Uuid(), nullable=False),
+    sa.Column('service_id', sa.Integer(), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['accordance_id'], ['accordance.id'], ),
     sa.ForeignKeyConstraint(['receipt_id'], ['receipt.id'], ),
@@ -186,8 +187,8 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('value', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('field_type_id', sa.Uuid(), nullable=False),
-    sa.Column('service_id', sa.Uuid(), nullable=False),
+    sa.Column('field_type_id', sa.Uuid(), nullable=True),
+    sa.Column('service_id', sa.Integer(), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['field_type_id'], ['servicefieldtype.id'], ),
     sa.ForeignKeyConstraint(['service_id'], ['service.id'], ),
@@ -198,8 +199,8 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('content', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('service_id', sa.Uuid(), nullable=False),
-    sa.Column('issuer_id', sa.Uuid(), nullable=False),
+    sa.Column('service_id', sa.Integer(), nullable=True),
+    sa.Column('issuer_id', sa.Uuid(), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['issuer_id'], ['user.id'], ),
     sa.ForeignKeyConstraint(['service_id'], ['service.id'], ),
@@ -211,7 +212,7 @@ def upgrade() -> None:
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.Column('lawyer_notified_at', sa.DateTime(), nullable=True),
     sa.Column('client_notified_at', sa.DateTime(), nullable=True),
-    sa.Column('payment_id', sa.Uuid(), nullable=False),
+    sa.Column('payment_id', sa.Uuid(), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['payment_id'], ['payment.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -223,8 +224,8 @@ def upgrade() -> None:
     sa.Column('status', sa.Enum('REGISTERED', 'PAID', name='repassstatus'), nullable=False),
     sa.Column('amount', sa.Integer(), nullable=False),
     sa.Column('receipt_id', sa.Uuid(), nullable=True),
-    sa.Column('payment_id', sa.Uuid(), nullable=False),
-    sa.Column('receiver_id', sa.Uuid(), nullable=False),
+    sa.Column('payment_id', sa.Uuid(), nullable=True),
+    sa.Column('receiver_id', sa.Uuid(), nullable=True),
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.ForeignKeyConstraint(['payment_id'], ['payment.id'], ),
     sa.ForeignKeyConstraint(['receipt_id'], ['receipt.id'], ),
@@ -238,10 +239,11 @@ def upgrade() -> None:
         languages=["pt"],
     )
     pt.install()
-    op.bulk_insert(country_table, [{
-        'code': country.alpha_3,
-        'name': _(country.name),  # type: ignore
-    } for country in pycountry.countries ])
+    countries = [{
+        'code': existing_country.alpha_3,
+        'name': _(existing_country.name),  # type: ignore
+    } for existing_country in pycountry.countries ]
+    op.bulk_insert(country_table, countries, multiinsert=True)
 
 
 def downgrade() -> None:
@@ -267,3 +269,10 @@ def downgrade() -> None:
     op.drop_table('country')
     op.drop_table('accordance')
     # ### end Alembic commands ###
+
+    sa.Enum('COMERCIAL', 'EXECUTOR', 'FINANCEIRO', 'ADMIN', name='roletype').drop(op.get_bind())
+    sa.Enum('NOT_LOGGED_IN', 'THUNDERBIRD', name='loggedinas').drop(op.get_bind())
+    sa.Enum('SCHEDULED', 'FINISHED', name='appointmentstatus').drop(op.get_bind())
+    sa.Enum('REGISTERED', 'WAITING_FOR_PAYMENT', 'LATE_PAYMENT', 'ACCORDANCE', 'EXTRA_JUDICIAL', 'PAID', name='paymentstatus').drop(op.get_bind())
+    sa.Enum('INSTALLMENT', 'UPFRONT', 'PAYBACK', name='paymenttype').drop(op.get_bind())
+    sa.Enum('REGISTERED', 'PAID', name='repassstatus').drop(op.get_bind())

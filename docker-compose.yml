@@ -1,0 +1,24 @@
+services:
+  resolve_api_server:
+    build: .
+    entrypoint: ./entrypoint.sh
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://resolve_user:my_password@resolve_database:5432/resolve_db
+    depends_on:
+      - resolve_database
+
+  resolve_database:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: resolve_user
+      POSTGRES_PASSWORD: my_password
+      POSTGRES_DB: resolve_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - resolve_db_data:/var/lib/postgresql/data
+
+volumes:
+  resolve_db_data:

@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Sequence
 
 from fastapi import Depends
 from pydantic import UUID4
@@ -11,8 +11,8 @@ class ReadDocumentsByClientIdUseCase:
     def __init__(self, documents_repository: DocumentsRepositoryDep) -> None:
         self.documents_repository = documents_repository
 
-    def execute(self, client_id: UUID4) -> list[Document]:
-        return self.documents_repository.find_documents_by_client_id(client_id)
+    def execute(self, client_id: UUID4) -> Sequence[Document]:
+        return self.documents_repository.find_by_client_id(client_id)
 
 
 ReadDocumentsByClientIdUseCaseDep = Annotated[

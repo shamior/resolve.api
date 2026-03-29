@@ -15,11 +15,17 @@ from app.domain.config.env_config.settings import settings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     os.makedirs(
-        f"{settings.STORAGE_DIR}{settings.DOCUMENTS_DIR}",
+        os.path.join(
+            settings.STORAGE_DIR,
+            settings.DOCUMENTS_DIR,
+        ),
         exist_ok=True,
     )
     os.makedirs(
-        f"{settings.STORAGE_DIR}{settings.RECEIPTS_DIR}",
+        os.path.join(
+            settings.STORAGE_DIR,
+            settings.RECEIPTS_DIR,
+        ),
         exist_ok=True,
     )
     yield

@@ -1,6 +1,9 @@
+import gettext
 from contextlib import contextmanager
 from datetime import datetime
+from pathlib import Path
 
+import pycountry
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import event
@@ -9,12 +12,14 @@ from sqlmodel import Session, SQLModel, StaticPool, create_engine
 from app.api.auth.presentable.token_presentable import TokenWithUser
 from app.api.user.presentable.user_presentable import UserPresentable
 from app.domain.config.env_config.settings import Settings
+from app.domain.config.env_config.settings import settings as env_settings
 from app.domain.entities.user_role_entity import RoleType
 from app.domain.helpers.security import (
     create_access_token,
     create_refresh_token,
 )
 from app.infra.database.database import get_session
+from app.infra.database.models import Country
 from app.main import app
 from tests.mocks.user_factory import UserFactory, UserMockWithPassword
 
@@ -48,6 +53,26 @@ def db():
     engine.dispose()
 
 
+@pytest.fixture
+def db_with_countries(db: Session):
+    pt = gettext.translation(
+        "iso3166-1",
+        pycountry.LOCALES_DIR,
+        languages=["pt"],
+    )
+    pt.install()
+    countries = [
+        Country(
+            name=_(country.name),  # type: ignore
+            code=country.alpha_3,
+        )
+        for country in pycountry.countries
+    ]
+    db.add_all(countries)
+    db.commit()
+    return db
+
+
 @contextmanager
 def _mock_db_time(*, model, time=datetime.now()):
     def fake_time_hook(mapper, connection, target):
@@ -67,8 +92,15 @@ def mock_db_time():
 
 @pytest.fixture
 def settings():
-    settings = Settings()  # pyright: ignore[reportCallIssue]
-    return settings
+    return env_settings
+
+
+@pytest.fixture
+def settings_with_path(tmp_path: Path, settings: Settings):
+    old_storage_dir = settings.STORAGE_DIR
+    settings.STORAGE_DIR = tmp_path.as_posix()
+    yield settings
+    settings.STORAGE_DIR = old_storage_dir
 
 
 @pytest.fixture

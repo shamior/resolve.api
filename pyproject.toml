@@ -13,10 +13,11 @@ dependencies = [
     "pyjwt (>=2.11.0,<3.0.0)",
     "alembic (>=1.18.4,<2.0.0)",
     "pycountry (>=26.2.16,<27.0.0)",
+    "psycopg[binary] (>=3.3.3,<4.0.0)",
 ]
 
 [tool.poetry]
-packages = [{include = "resolve"}]
+packages = [{include = "app"}]
 
 [tool.ruff]
 builtins = ["_"]
@@ -54,6 +55,11 @@ pythonpath = "."
 addopts = "-p no:warnings"
 
 
+[tool.coverage.run]
+omit = [
+    "app/infra/database/seed/seed.py",
+]
+
 
 [tool.taskipy.tasks]
 lint = "ruff check"
@@ -73,6 +79,10 @@ ptest = "pytest -s -vv"
 gen_migration = "alembic revision --autogenerate -m"
 migrate = "alembic upgrade head"
 
+drop_migrations = "alembic downgrade base"
+post_drop_migrations = "task migrate"
+
+pre_seed = "task drop_migrations"
 seed = "python -m app.infra.database.seed.seed"
 
 

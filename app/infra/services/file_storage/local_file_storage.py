@@ -1,3 +1,5 @@
+import os
+
 from fastapi import Depends
 from typing_extensions import Annotated
 
@@ -10,13 +12,15 @@ class LocalFileStorage(FileStorage):
         self.storage_dir = settings.STORAGE_DIR
 
     def write(self, file_content: bytes, file_path: str) -> str:
-        path = f"{self.storage_dir}/{file_path}"
+        path = os.path.join(self.storage_dir, file_path)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "wb") as f:
             f.write(file_content)
         return path
 
     def read(self, file_path: str) -> bytes:
-        with open(f"{self.storage_dir}/{file_path}", "rb") as f:
+        path = os.path.join(self.storage_dir, file_path)
+        with open(path, "rb") as f:
             file = f.read()
         return file
 

@@ -1,3 +1,6 @@
+import os
+from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,4 +19,11 @@ class Settings(BaseSettings):
     RECEIPTS_DIR: str
 
 
-settings = Settings()  # pyright: ignore[reportCallIssue]
+@lru_cache()
+def get_settings() -> Settings:
+    settings = Settings()  # type: ignore
+    settings.STORAGE_DIR = os.path.join(os.getcwd(), settings.STORAGE_DIR)
+    return settings
+
+
+settings = get_settings()

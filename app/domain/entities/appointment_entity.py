@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 
-from pydantic import UUID4
 from sqlmodel import Field, SQLModel
 
 
@@ -14,4 +14,4 @@ class AppointmentEntity(SQLModel):
     status: AppointmentStatus = Field(default=AppointmentStatus.SCHEDULED)
     scheduled_to: datetime = Field()
     site: str = Field()  # TODO: make a table
-    service_id: UUID4 = Field(foreign_key="service.id")
+    service_id: Optional[int] = Field(default=None, foreign_key="service.id")

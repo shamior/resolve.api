@@ -26,8 +26,8 @@ class PaymentEntity(SQLModel):
     amount: int = Field()
     receipt_id: Optional[UUID4] = Field(foreign_key="receipt.id", default=None)
     accordance_id: Optional[UUID4] = Field(
-        foreign_key="accordance.id",
         default=None,
+        foreign_key="accordance.id",
     )
 
-    service_id: UUID4 = Field(foreign_key="service.id")
+    service_id: Optional[int] = Field(foreign_key="service.id")

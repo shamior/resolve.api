@@ -13,6 +13,6 @@ class RepassStatus(str, Enum):
 class RepassEntity(SQLModel):
     status: RepassStatus = Field(default=RepassStatus.REGISTERED)
     amount: int = Field()
-    receipt_id: Optional[UUID4] = Field(foreign_key="receipt.id")
-    payment_id: UUID4 = Field(foreign_key="payment.id")
-    receiver_id: UUID4 = Field(foreign_key="user.id")
+    receipt_id: Optional[UUID4] = Field(default=None, foreign_key="receipt.id")
+    payment_id: Optional[UUID4] = Field(default=None, foreign_key="payment.id")
+    receiver_id: Optional[UUID4] = Field(default=None, foreign_key="user.id")
